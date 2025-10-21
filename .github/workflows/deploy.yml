@@ -1,0 +1,64 @@
+name: Build and Deploy to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: "cid-ckc0gzhwe8dpcpce"  # e.g. my-node-monolith
+  NODE_VERSION: "22.x"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install serverapp dependencies
+      working-directory: serverapp
+      run: npm install
+
+    - name: Build serverapp
+      working-directory: serverapp
+      run: npm run build
+
+    - name: Install clientapp dependencies
+      working-directory: clientapp
+      run: npm install
+
+    - name: Build clientapp
+      working-directory: clientapp
+      run: |
+        NEXT_PUBLIC_API_URL=https://cid-ckc0gzhwe8dpcpce.centralindia-01.azurewebsites.net
+        npm run build
+
+    - name: Prepare deployment package
+      run: |
+        mkdir -p publish/serverapp
+        mkdir -p publish/clientapp
+
+        # Copy serverapp output
+        cp -r serverapp/dist publish/serverapp/
+        cp serverapp/package*.json publish/serverapp/
+
+        # Copy clientapp output
+        cp -r clientapp/.next publish/clientapp/
+        cp -r clientapp/public publish/clientapp/
+        cp clientapp/package*.json publish/clientapp/
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: publish
