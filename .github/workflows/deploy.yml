@@ -51,12 +51,13 @@ jobs:
         cp -r clientapp/public publish/clientapp
         cp clientapp/package*.json publish/clientapp
     
-    - name: Debug publish profile secret (for testing only)
-      run: echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}"
+    - name: Decode and write publish profile
+      run: |
+        echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BASE64 }}" | base64 -d > publishProfile.publishSettings
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        publish-profile: ${{ github.workspace }}/publishProfile.publishSettings
         package: publish
