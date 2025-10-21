@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: "cid-ckc0gzhwe8dpcpce"  # e.g. my-node-monolith
+  AZURE_WEBAPP_NAME: "cid-ckc0gzhwe8dpcpce"
   NODE_VERSION: "22.x"
 
 jobs:
@@ -22,7 +22,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        
 
     - name: Install serverapp dependencies
       working-directory: serverapp
@@ -44,17 +43,13 @@ jobs:
 
     - name: Prepare deployment package
       run: |
-        mkdir -p publish/serverapp
-        mkdir -p publish/clientapp
+        mkdir -p publish
+        cp -r serverapp/dist publish/serverapp
+        cp serverapp/package*.json publish/serverapp
 
-        # Copy serverapp output
-        cp -r serverapp/dist publish/serverapp/
-        cp serverapp/package*.json publish/serverapp/
-
-        # Copy clientapp output
-        cp -r clientapp/.next publish/clientapp/
-        cp -r clientapp/public publish/clientapp/
-        cp clientapp/package*.json publish/clientapp/
+        cp -r clientapp/.next publish/clientapp
+        cp -r clientapp/public publish/clientapp
+        cp clientapp/package*.json publish/clientapp
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
